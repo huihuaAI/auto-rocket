@@ -135,6 +135,8 @@ class ConfigFrame(ttk.LabelFrame):
                    command=self.save_config).pack(side=tk.LEFT, padx=5)
         ttk.Button(button_frame, text="重置配置",
                    command=self.load_config).pack(side=tk.LEFT, padx=5)
+        ttk.Button(button_frame, text="打开配置文件夹",
+                   command=self.open_config_folder).pack(side=tk.LEFT, padx=5)
 
     def load_config(self):
         """从Config类加载配置"""
@@ -152,7 +154,7 @@ class ConfigFrame(ttk.LabelFrame):
         self.config_vars['log_level'].set(Config.LOG_LEVEL)
 
     def save_config(self):
-        """保存配置到环境变量和Config类"""
+        """保存配置到环境变量、Config类和.env文件"""
         try:
             # 更新Config类
             Config.USERNAME = self.config_vars['username'].get()
@@ -184,9 +186,60 @@ class ConfigFrame(ttk.LabelFrame):
 
             os.environ['LOG_LEVEL'] = Config.LOG_LEVEL
 
-            messagebox.showinfo("成功", "配置已保存")
+            # 写入到 .env 文件
+            self._write_env_file()
+
+            messagebox.showinfo("成功", "配置已保存到文件")
         except Exception as e:
             messagebox.showerror("错误", f"保存配置失败: {e}")
+
+    def _write_env_file(self):
+        """写入配置到 .env 文件（只更新修改的字段）"""
+        from config import USER_ENV_FILE
+        from dotenv import set_key
+
+        # 更新各个配置项到 .env 文件
+        try:
+            # 日志配置
+            set_key(USER_ENV_FILE, 'LOG_LEVEL', Config.LOG_LEVEL or 'INFO')
+
+            # RocketGo 登录凭据
+            set_key(USER_ENV_FILE, 'ROCKETGO_USER', Config.USERNAME or '')
+            set_key(USER_ENV_FILE, 'ROCKETGO_PASS', Config.PASSWORD or '')
+
+            # Dify AI 配置
+            set_key(USER_ENV_FILE, 'DIFY_URL', Config.DIFY_URL or '')
+            set_key(USER_ENV_FILE, 'DIFY_API_KEY', Config.DIFY_API_KEY or '')
+
+            # Dify 输入参数
+            set_key(USER_ENV_FILE, 'INPUT_REGISTER_URL', Config.INPUT_PARAMS.get('register_url', ''))
+            set_key(USER_ENV_FILE, 'INPUT_WHATSAPP_URL', Config.INPUT_PARAMS.get('whatsapp_url', ''))
+            set_key(USER_ENV_FILE, 'INPUT_HR_NAME', Config.INPUT_PARAMS.get('hr_name', ''))
+            set_key(USER_ENV_FILE, 'INPUT_LANGUAGE', Config.INPUT_PARAMS.get('language', ''))
+
+            logging.info(f"配置已保存到: {USER_ENV_FILE}")
+        except Exception as e:
+            logging.error(f"写入 .env 文件失败: {e}")
+            raise
+
+    def open_config_folder(self):
+        """打开配置文件夹"""
+        try:
+            from config import USER_DATA_DIR
+            import subprocess
+            import sys
+
+            # 根据操作系统打开文件夹
+            if sys.platform == 'darwin':  # macOS
+                subprocess.run(['open', str(USER_DATA_DIR)])
+            elif sys.platform == 'win32':  # Windows
+                subprocess.run(['explorer', str(USER_DATA_DIR)])
+            else:  # Linux
+                subprocess.run(['xdg-open', str(USER_DATA_DIR)])
+
+            messagebox.showinfo("成功", f"已打开配置文件夹:\n{USER_DATA_DIR}")
+        except Exception as e:
+            messagebox.showerror("错误", f"打开配置文件夹失败: {e}")
 
 
 class ControlFrame(ttk.LabelFrame):

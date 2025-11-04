@@ -6,12 +6,44 @@ Playwright WebSocket客户端 - 绕过Cloudflare保护
 
 import asyncio
 import logging
+import sys
 from typing import Callable, Optional
+from pathlib import Path
 
 from playwright.async_api import async_playwright
 from config import Config
 
 logger = logging.getLogger(__name__)
+
+
+def get_chromium_executable_path():
+    """获取 Chromium 可执行文件路径（兼容打包环境）"""
+    # 检查是否在 PyInstaller 打包环境中
+    if getattr(sys, 'frozen', False):
+        # 打包环境
+        if sys.platform == 'darwin':  # macOS
+            base_path = Path(sys._MEIPASS)
+            executable_path = base_path / 'playwright' / 'driver' / 'package' / '.local-browsers' / \
+                            'chromium_headless_shell-1187' / 'chrome-mac' / 'headless_shell'
+        elif sys.platform == 'win32':  # Windows
+            base_path = Path(sys._MEIPASS)
+            executable_path = base_path / 'playwright' / 'driver' / 'package' / '.local-browsers' / \
+                            'chromium_headless_shell-1187' / 'chrome-win' / 'headless_shell.exe'
+        else:  # Linux
+            base_path = Path(sys._MEIPASS)
+            executable_path = base_path / 'playwright' / 'driver' / 'package' / '.local-browsers' / \
+                            'chromium_headless_shell-1187' / 'chrome-linux' / 'headless_shell'
+
+        if executable_path.exists():
+            logger.info(f"使用打包的浏览器: {executable_path}")
+            return str(executable_path)
+        else:
+            logger.warning(f"打包的浏览器不存在: {executable_path}")
+            return None
+    else:
+        # 开发环境，使用默认路径
+        logger.info("使用系统安装的浏览器（开发模式）")
+        return None  # None 表示使用 Playwright 默认路径
 
 class PlaywrightWSClient:
     """使用Playwright建立WebSocket连接的客户端"""
@@ -30,11 +62,20 @@ class PlaywrightWSClient:
         try:
             self.playwright = await async_playwright().start()
 
+            # 获取浏览器可执行文件路径
+            executable_path = get_chromium_executable_path()
+
             # 启动浏览器（使用headless模式）
-            self.browser = await self.playwright.chromium.launch(
-                headless=True,
-                args=['--disable-web-security', '--disable-features=VizDisplayCompositor']
-            )
+            launch_options = {
+                'headless': True,
+                'args': ['--disable-web-security', '--disable-features=VizDisplayCompositor']
+            }
+
+            # 如果有指定的浏览器路径，使用它
+            if executable_path:
+                launch_options['executable_path'] = executable_path
+
+            self.browser = await self.playwright.chromium.launch(**launch_options)
 
             # 创建新页面
             self.page = await self.browser.new_page()

@@ -213,4 +213,7 @@ CLAUDE.md
 conversations.db
 test_message_splitter.py
 
-.env
+build
+dist
+icon.icns
+icon.ico

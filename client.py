@@ -443,7 +443,8 @@ class RocketGoClient:
             input_params=Config.INPUT_PARAMS,
             send_url=Config.SEND_MSG_URL,
             auth_token=self._auth_token,
-            client=self  # 传入self用于调用set_read接口
+            client=self,  # 传入self用于调用set_read接口
+            db_path=Config.DB_PATH  # 传入数据库路径
         )
         logger.info("自动回复处理器初始化完成")
 
@@ -459,7 +460,7 @@ class RocketGoClient:
         input_params["is_return_visit"] = 1
         # 创建监听服务
         self.conversation_monitor = ConversationMonitor(
-            db_path="conversations.db",
+            db_path=Config.DB_PATH,
             dify_url=Config.DIFY_URL,
             dify_api_key=Config.DIFY_API_KEY,
             dify_input_params=input_params,

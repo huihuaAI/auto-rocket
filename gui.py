@@ -5,19 +5,18 @@ RocketGo 自动回复机器人 - GUI界面
 跨平台Tkinter界面，支持Windows和macOS
 """
 
-import tkinter as tk
-from tkinter import ttk, scrolledtext, messagebox, filedialog
-import os
-import sys
 import asyncio
-import threading
 import logging
-from datetime import datetime
+import os
 import platform
+import threading
+import tkinter as tk
+from datetime import datetime
+from tkinter import ttk, scrolledtext, messagebox, filedialog
 from typing import Optional
 
-from config import Config
 from client import RocketGoClient
+from config import Config
 from logger_config import setup_logging
 
 
@@ -70,9 +69,37 @@ class ConfigFrame(ttk.LabelFrame):
         ttk.Entry(rocketgo_frame, textvariable=self.config_vars['password'],
                   show='*', width=30).grid(row=1, column=1, sticky=(tk.W, tk.E), pady=2, padx=5)
 
+        # INPUT_PARAMS 配置
+        input_params_frame = ttk.LabelFrame(self, text="AI 配置", padding=5)
+        input_params_frame.grid(row=1, column=0, sticky=(tk.W, tk.E, tk.N, tk.S), pady=5)
+
+        # 注册链接
+        ttk.Label(input_params_frame, text="注册链接:").grid(row=0, column=0, sticky=tk.W, pady=2)
+        self.config_vars['input_register_url'] = tk.StringVar()
+        ttk.Entry(input_params_frame, textvariable=self.config_vars['input_register_url'],
+                  width=30).grid(row=0, column=1, sticky=(tk.W, tk.E), pady=2, padx=5)
+
+        # WhatsApp链接
+        ttk.Label(input_params_frame, text="WhatsApp链接:").grid(row=1, column=0, sticky=tk.W, pady=2)
+        self.config_vars['input_whatsapp_url'] = tk.StringVar()
+        ttk.Entry(input_params_frame, textvariable=self.config_vars['input_whatsapp_url'],
+                  width=30).grid(row=1, column=1, sticky=(tk.W, tk.E), pady=2, padx=5)
+
+        # 客服名称
+        ttk.Label(input_params_frame, text="客服名称:").grid(row=2, column=0, sticky=tk.W, pady=2)
+        self.config_vars['input_hr_name'] = tk.StringVar()
+        ttk.Entry(input_params_frame, textvariable=self.config_vars['input_hr_name'],
+                  width=30).grid(row=2, column=1, sticky=(tk.W, tk.E), pady=2, padx=5)
+
+        # 语言
+        ttk.Label(input_params_frame, text="语言:").grid(row=3, column=0, sticky=tk.W, pady=2)
+        self.config_vars['input_language'] = tk.StringVar()
+        ttk.Entry(input_params_frame, textvariable=self.config_vars['input_language'],
+                  width=30).grid(row=3, column=1, sticky=(tk.W, tk.E), pady=2, padx=5)
+
         # Dify 配置
-        dify_frame = ttk.LabelFrame(self, text="Dify AI 配置", padding=5)
-        dify_frame.grid(row=1, column=0, sticky=(tk.W, tk.E, tk.N, tk.S), pady=5)
+        dify_frame = ttk.LabelFrame(self, text="Dify AI 配置(谨慎修改)", padding=5)
+        dify_frame.grid(row=2, column=0, sticky=(tk.W, tk.E, tk.N, tk.S), pady=5)
 
         # API URL
         ttk.Label(dify_frame, text="API URL:").grid(row=0, column=0, sticky=tk.W, pady=2)
@@ -87,19 +114,7 @@ class ConfigFrame(ttk.LabelFrame):
         ttk.Entry(dify_frame, textvariable=self.config_vars['dify_api_key'],
                   width=30).grid(row=1, column=1, sticky=(tk.W, tk.E), pady=2, padx=5)
 
-        # 数据库配置
-        db_frame = ttk.LabelFrame(self, text="数据库配置", padding=5)
-        db_frame.grid(row=2, column=0, sticky=(tk.W, tk.E, tk.N, tk.S), pady=5)
-
-        ttk.Label(db_frame, text="数据库路径:").grid(row=0, column=0, sticky=tk.W, pady=2)
-        self.config_vars['db_path'] = tk.StringVar()
-        db_entry_frame = ttk.Frame(db_frame)
-        db_entry_frame.grid(row=0, column=1, sticky=(tk.W, tk.E), pady=2, padx=5)
-        ttk.Entry(db_entry_frame, textvariable=self.config_vars['db_path'],
-                  width=25).pack(side=tk.LEFT, fill=tk.X, expand=True)
-        ttk.Button(db_entry_frame, text="浏览...", command=self.browse_db_path,
-                   width=8).pack(side=tk.RIGHT, padx=(5, 0))
-
+        
         # 日志配置
         log_frame = ttk.LabelFrame(self, text="日志配置", padding=5)
         log_frame.grid(row=3, column=0, sticky=(tk.W, tk.E, tk.N, tk.S), pady=5)
@@ -121,23 +136,19 @@ class ConfigFrame(ttk.LabelFrame):
         ttk.Button(button_frame, text="重置配置",
                    command=self.load_config).pack(side=tk.LEFT, padx=5)
 
-    def browse_db_path(self):
-        """浏览数据库文件路径"""
-        filename = filedialog.asksaveasfilename(
-            title="选择数据库文件",
-            defaultextension=".db",
-            filetypes=[("SQLite Database", "*.db"), ("All Files", "*.*")]
-        )
-        if filename:
-            self.config_vars['db_path'].set(filename)
-
     def load_config(self):
         """从Config类加载配置"""
         self.config_vars['username'].set(Config.USERNAME)
         self.config_vars['password'].set(Config.PASSWORD)
         self.config_vars['dify_url'].set(Config.DIFY_URL)
         self.config_vars['dify_api_key'].set(Config.DIFY_API_KEY)
-        self.config_vars['db_path'].set(Config.DB_PATH)
+
+        # 加载INPUT_PARAMS配置
+        self.config_vars['input_register_url'].set(Config.INPUT_PARAMS.get('register_url', ''))
+        self.config_vars['input_whatsapp_url'].set(Config.INPUT_PARAMS.get('whatsapp_url', ''))
+        self.config_vars['input_hr_name'].set(Config.INPUT_PARAMS.get('hr_name', ''))
+        self.config_vars['input_language'].set(Config.INPUT_PARAMS.get('language', ''))
+
         self.config_vars['log_level'].set(Config.LOG_LEVEL)
 
     def save_config(self):
@@ -148,7 +159,14 @@ class ConfigFrame(ttk.LabelFrame):
             Config.PASSWORD = self.config_vars['password'].get()
             Config.DIFY_URL = self.config_vars['dify_url'].get()
             Config.DIFY_API_KEY = self.config_vars['dify_api_key'].get()
-            Config.DB_PATH = self.config_vars['db_path'].get()
+
+            # 更新INPUT_PARAMS配置
+            Config.INPUT_PARAMS['register_url'] = self.config_vars['input_register_url'].get()
+            Config.INPUT_PARAMS['whatsapp_url'] = self.config_vars['input_whatsapp_url'].get()
+            Config.INPUT_PARAMS['hr_name'] = self.config_vars['input_hr_name'].get()
+            Config.INPUT_PARAMS['language'] = self.config_vars['input_language'].get()
+            # is_return_visit 保持默认值 0，不允许修改
+
             Config.LOG_LEVEL = self.config_vars['log_level'].get()
 
             # 同时更新环境变量（可选）
@@ -156,7 +174,14 @@ class ConfigFrame(ttk.LabelFrame):
             os.environ['ROCKETGO_PASS'] = Config.PASSWORD
             os.environ['DIFY_URL'] = Config.DIFY_URL
             os.environ['DIFY_API_KEY'] = Config.DIFY_API_KEY
-            os.environ['DB_PATH'] = Config.DB_PATH
+
+            # 更新INPUT_PARAMS环境变量
+            os.environ['INPUT_REGISTER_URL'] = Config.INPUT_PARAMS['register_url']
+            os.environ['INPUT_WHATSAPP_URL'] = Config.INPUT_PARAMS['whatsapp_url']
+            os.environ['INPUT_HR_NAME'] = Config.INPUT_PARAMS['hr_name']
+            os.environ['INPUT_LANGUAGE'] = Config.INPUT_PARAMS['language']
+            # INPUT_IS_RETURN_VISIT 保持默认值 0
+
             os.environ['LOG_LEVEL'] = Config.LOG_LEVEL
 
             messagebox.showinfo("成功", "配置已保存")
@@ -403,9 +428,9 @@ class RocketGoGUI:
         except Exception as e:
             error_msg = str(e)
             logging.error(f"机器人运行错误: {error_msg}", exc_info=True)
-            # 在主线程中更新UI - 使用默认参数捕获变量值
-            self.root.after(0, lambda msg=error_msg: self.control_frame.stop())
-            self.root.after(0, lambda msg=error_msg: self.update_status(f"错误: {msg}"))
+            # 在主线程中更新UI
+            self.root.after(0, lambda: self.control_frame.stop())
+            self.root.after(0, lambda: self.update_status(f"错误: {error_msg}"))
         finally:
             if self.loop and not self.loop.is_closed():
                 self.loop.close()

@@ -5,7 +5,7 @@
 ## 项目结构
 
 ```
-PythonProject/
+RocketGo/
 ├── launcher.py           # 🚀 统一启动器（支持GUI/CLI模式）
 ├── gui.py                # 🖥️ Tkinter图形界面
 ├── main.py               # 📟 CLI模式主入口

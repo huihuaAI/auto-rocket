@@ -542,14 +542,19 @@ class RocketGoClient:
         """清理资源"""
         try:
             if self.conversation_monitor:
+                logger.debug("清理对话监听服务...")
                 await self.conversation_monitor.stop()
                 self.conversation_monitor = None
+                logger.debug("对话监听服务已停止")
             if self.ws_client:
+                logger.debug("清理WebSocket客户端...")
                 await self.ws_client.close()
                 self.ws_client = None
+                logger.debug("WebSocket客户端已关闭")
             if self.message_handler:
                 await self.message_handler.close()
                 self.message_handler = None
+                logger.debug("消息处理器已关闭")
             await self.close()
             logger.info("资源清理完成")
         except Exception as e:

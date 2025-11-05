@@ -497,10 +497,11 @@ class RocketGoGUI:
                 # 在事件循环中调度清理，并等待其完成
                 future = asyncio.run_coroutine_threadsafe(self.client.cleanup(), self.loop)
 
-                # 等待清理完成（最多等待10秒）
+                # 等待清理完成（最多等待5秒）
                 try:
-                    future.result(timeout=10)
+                    future.result(timeout=5)
                 except Exception as e:
+                    os._exit(0)  # ✅ 直接杀死所有线程，不会卡死
                     logging.error(f"清理资源时出错: {e}", exc_info=True)
 
                 # 清理完成后再停止事件循环
@@ -508,7 +509,7 @@ class RocketGoGUI:
 
             # 等待线程结束
             if self.bot_thread and self.bot_thread.is_alive():
-                self.bot_thread.join(timeout=5)
+                self.bot_thread.join(timeout=3)
 
             self.client = None
             self.loop = None

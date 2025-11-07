@@ -1,7 +1,7 @@
 [project]
 name = "auto-rocket-gui"
 version = "0.1.0"
-description = "Add your description here"
+description = "Auto Rocket GUI - 自动回复RocketGo的GUI工具"
 readme = "README.md"
 requires-python = ">=3.12"
 dependencies = [
@@ -13,3 +13,5 @@ dependencies = [
     "sqlalchemy>=2.0.44",
     "websockets[socks]>=15.0.1",
 ]
+[tool.setuptools]
+packages = ["core", "services", "gui"]

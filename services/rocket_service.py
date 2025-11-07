@@ -6,7 +6,7 @@ RocketGo服务层 - 整合Client、WebSocket和消息处理功能
 
 import asyncio
 import logging
-from typing import Optional, Callable, Any
+from typing import Optional, Callable
 from enum import Enum
 
 from core.auth_manager import AuthManager
@@ -22,11 +22,11 @@ logger = logging.getLogger(__name__)
 
 class ServiceStatus(Enum):
     """服务状态枚举"""
-    STOPPED = "stopped"
-    STARTING = "starting"
-    RUNNING = "running"
-    STOPPING = "stopping"
-    ERROR = "error"
+    STOPPED = "停止"
+    STARTING = "启动中"
+    RUNNING = "运行中"
+    STOPPING = "停止中"
+    ERROR = "错误"
 
 
 class RocketService:

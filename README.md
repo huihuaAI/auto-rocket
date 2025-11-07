@@ -1,275 +1,240 @@
-# RocketGo 自动回复机器人
+# Auto Rocket GUI
 
-一个支持图形界面和命令行的智能客服机器人，基于 Dify AI 和 Playwright 构建。
+这是一个针对火箭（RocketGo）平台的自动控制GUI应用程序。
 
 ## 项目结构
 
 ```
-RocketGo/
-├── launcher.py           # 🚀 统一启动器（支持GUI/CLI模式）
-├── gui.py                # 🖥️ Tkinter图形界面
-├── main.py               # 📟 CLI模式主入口
-├── config.py             # ⚙️ 配置管理
-├── client.py             # 🌐 RocketGo客户端
-├── playwright_ws.py      # 🎭 Playwright WebSocket客户端
-├── reply_handler.py      # 📤 消息发送处理
-├── chat_processor.py     # 🤖 消息处理逻辑
-├── dify_client.py        # 🧠 Dify AI客户端
-├── db_manager.py         # 💾 数据库管理
-├── logger_config.py      # 🎨 彩色日志配置
-├── message_splitter.py   # ✂️ 消息分段服务
-├── conversation_monitor.py # 👀 对话监听服务
-├── 验证码识别.py         # 🔍 验证码识别工具
-└── conversations.db      # 📊 SQLite数据库（自动创建）
+auto-rocket-gui/
+├── main.py                 # 主入口文件
+├── config.py              # 配置加载模块
+├── config.toml            # 配置文件
+├── core/                  # 核心业务逻辑层
+│   ├── __init__.py
+│   ├── auth_manager.py    # 认证管理
+│   ├── http_client.py     # HTTP客户端
+│   ├── client.py          # RocketGo客户端
+│   ├── ws.py              # WebSocket客户端
+│   ├── chat_processor.py  # 消息处理器
+│   ├── conversation_monitor.py  # 对话监听服务
+│   ├── dify.py            # Dify AI集成
+│   ├── db_manage.py       # 数据库管理
+│   ├── message_splitter.py # 消息分段器
+│   └── message_service.py  # 消息服务接口
+├── services/              # 服务层（降低耦合）
+│   ├── __init__.py
+│   ├── rocket_service.py  # RocketGo服务（整合所有功能）
+│   └── scheduler_service.py # 定时重启服务
+└── gui/                   # GUI界面层
+    ├── __init__.py
+    ├── login_window.py    # 登录窗口
+    └── main_window.py     # 主窗口
 ```
-
-## 文件说明
-
-### 启动器
-
-- **launcher.py** - 统一启动器，支持GUI模式（默认）和CLI模式
-
-### 界面模块
-
-- **gui.py** - 跨平台Tkinter图形界面，提供配置管理、运行控制、日志查看等功能
-- **main.py** - CLI模式主入口，无图形界面运行
-
-### 核心模块
-
-- **config.py** - 集中管理所有配置项，支持环境变量
-- **client.py** - RocketGo平台客户端，处理登录和协调WebSocket连接
-- **playwright_ws.py** - 基于Playwright的WebSocket客户端，绕过Cloudflare保护
-
-### 功能模块
-
-- **reply_handler.py** - 消息发送处理器，负责消息发送流程管理
-- **chat_processor.py** - 消息处理逻辑，解析WebSocket消息并调用AI
-- **dify_client.py** - Dify AI API客户端，支持持久化对话和流式输出
-- **db_manager.py** - SQLite数据库管理，存储conversation_id和对话状态
-- **conversation_monitor.py** - 对话监听服务，定期检查并主动跟进超时对话
-- **message_splitter.py** - 消息分段服务，支持使用分隔符分段发送长消息
-
-### 工具模块
-
-- **logger_config.py** - 彩色日志配置，提供美观的日志输出
-- **验证码识别.py** - 验证码识别功能，用于自动登录
-
-## 使用方法
-
-### 1. GUI模式（推荐）
-
-#### 启动GUI
-```bash
-python launcher.py
-# 或明确指定GUI模式
-python launcher.py --gui
-```
-
-GUI界面提供:
-- 可视化配置管理（用户名、密码、API密钥等）
-- 一键启动/停止控制
-- 实时日志查看
-- 日志导出功能
-- 跨平台支持（Windows/macOS/Linux）
-
-### 2. CLI模式（命令行）
-
-#### 直接启动CLI
-```bash
-python launcher.py --cli
-# 或使用别名
-python launcher.py --headless
-```
-
-#### 传统方式（仅CLI）
-```bash
-python main.py
-```
-
-### 3. 配置文件（推荐）
-
-#### 使用 .env 文件
-```bash
-# 复制示例配置文件
-cp .env.example .env
-
-# 编辑 .env 文件，填入你的配置
-vim .env  # 或使用其他编辑器
-
-# 然后启动
-python launcher.py
-```
-
-#### .env 文件示例
-```bash
-# RocketGo 登录凭据
-ROCKETGO_USER=your_username
-ROCKETGO_PASS=your_password
-
-# Dify AI 配置
-DIFY_URL=https://api.dify.ai/v1
-DIFY_API_KEY=your_dify_api_key
-
-# Dify 输入参数
-INPUT_REGISTER_URL=https://example.com/register
-INPUT_WHATSAPP_URL=https://wa.me/1234567890
-INPUT_HR_NAME=Your HR Name
-INPUT_LANGUAGE=中文
-INPUT_IS_RETURN_VISIT=0
-
-# 数据库配置
-DB_PATH=conversations.db
-
-# 日志配置
-LOG_LEVEL=INFO
-LOG_FILE=auto_reply.log
-```
-
-### 4. GUI配置
-也可以直接在GUI界面中进行可视化配置（启动后在配置管理面板中修改）。
-
-> **注意**: 不要直接修改 `config.py`，请使用 `.env` 文件或GUI配置。
 
 ## 功能特性
 
-### 核心功能
-✅ **自动登录** - 支持验证码识别，自动处理登录流程
-✅ **智能对话** - 集成Dify AI，支持上下文记忆和流式输出
-✅ **持久化存储** - 使用SQLite存储对话状态，重启后继续对话
-✅ **自动回复** - 监听用户消息，自动生成并发送回复
-✅ **Cloudflare绕过** - 使用Playwright绕过Cloudflare保护
-✅ **断线重连** - 自动处理网络断线重连
-✅ **多用户支持** - 每个用户独立的对话记录
+### 1. 登录功能
+- 用户名密码登录
+- 自动验证码识别
+- 记住密码功能（使用系统keyring）
+- 登录失败自动重试（最多3次）
 
-### 界面与交互
-✅ **双模式支持** - GUI图形界面 + CLI命令行，适应不同使用场景
-✅ **跨平台** - 支持Windows、macOS、Linux系统
-✅ **彩色日志** - 美观易读的彩色日志输出，支持日志导出
-✅ **可视化配置** - GUI界面中直观管理所有配置项
+### 2. 主界面功能
 
-### 高级功能
-✅ **消息分段** - 支持使用分隔符(&&&)将长消息分段发送
-✅ **对话监听** - 定期检查超时对话，主动发送跟进消息
-✅ **智能激活** - 防止过度打扰，控制主动消息频率
-✅ **配置灵活** - 支持环境变量、配置文件、GUI配置三种方式
+#### 控制面板
+- **服务控制**: 启动/停止/重启 WebSocket连接
+- **定时重启**: 可配置的自动重启功能（防止token过期）
+  - 可设置最小和最大重启间隔
+  - 随机间隔防止检测
+  - 显示下次重启时间
+- **对话监听服务**: 自动跟进长时间未回复的对话
+  - 可配置检查间隔
+  - 可配置超时阈值
+  - 可配置最大激活次数
 
-## 运行流程
+#### 配置编辑
+- 直接在GUI中编辑 `config.toml` 文件
+- 保存后提示重启服务生效
+- 支持所有配置项的修改
 
-### 启动流程
-1. **选择模式** → GUI模式（默认）或 CLI模式
-2. **读取配置** → 从环境变量/配置文件/GUI加载配置
-3. **设置日志** → 初始化彩色日志系统
+#### 日志查看
+- 实时显示运行日志
+- 按级别着色（INFO/WARNING/ERROR）
+- 支持清空日志
+- 自动滚动到最新消息
 
-### 运行流程
-4. **登录** → 自动处理验证码，获取认证token
-5. **初始化** → 获取会话信息，初始化AI处理器
-6. **WebSocket连接** → 使用Playwright绕过Cloudflare建立连接
-7. **启动监听** → 启动消息监听和对话监听服务
+### 3. 核心功能
 
-### 消息处理
-8. **接收消息** → 持续监听用户发送的消息
-9. **AI处理** → 调用Dify AI生成智能回复
-10. **分段发送** → 根据分隔符拆分并发送回复
-11. **持久化** → 保存对话状态和conversation_id到数据库
+#### WebSocket消息处理
+- 自动连接和重连
+- 心跳保活（每5秒）
+- 消息自动处理和回复
+- 支持多种消息类型（文本/图片/视频/音频）
 
-### 主动跟进
-12. **定期检查** → 每5秒检查超时对话（默认3小时）
-13. **生成问候** → AI生成个性化跟进消息
-14. **主动发送** → 向超时用户主动发送跟进消息
-15. **控制频率** → 限制单个用户的主动激活次数（默认≤10次）
+#### Dify AI集成
+- 智能对话回复
+- 支持上下文管理
+- 对话历史持久化
+- 支持文件和图片输入
 
-## 安装依赖
+#### 对话监听
+- 定期检查数据库中的对话
+- 自动跟进超时未回复的对话
+- 防止过度激活（可配置最大次数）
 
-```bash
-# 安装 Python 依赖
-pip install playwright asyncio aiohttp python-dotenv
+## 使用方法
 
-# 安装 Playwright 浏览器
-playwright install chromium
-
-# GUI 模式需要 tkinter (macOS 可能需要单独安装)
-# macOS: brew install python-tk
-# Ubuntu/Debian: sudo apt-get install python3-tk
-```
-
-## 快速开始
+### 1. 安装依赖
 
 ```bash
-# 1. 复制配置文件
-cp .env.example .env
-
-# 2. 编辑配置文件，填入你的账号信息
-vim .env
-
-# 3. 启动程序（GUI模式）
-python launcher.py
-
-# 或启动 CLI 模式
-python launcher.py --cli
+pip install -r requirements.txt
 ```
+
+需要安装的主要依赖：
+- tkinter（Python自带）
+- aiohttp
+- websockets
+- sqlalchemy
+- ddddocr（验证码识别）
+- Pillow（图片处理）
+- keyring（密码存储）
+
+### 2. 配置文件
+
+编辑 `config.toml` 文件，配置以下内容：
+
+```toml
+# RocketGo 平台配置
+[rocketgo]
+login_url = "https://pn3cs.rocketgo.vip/prod-api2/login"
+# ... 其他URL配置
+
+# Dify AI 配置
+[dify]
+url = "你的Dify API地址"
+api_key = "你的Dify API密钥"
+
+[dify.input]
+register_url = ""
+whatsapp_url = ""
+hr_name = ""
+language = ""
+is_return_visit = 0
+
+# 数据库配置
+[db]
+path = "conversations.db"
+```
+
+### 3. 运行程序
+
+```bash
+python3 main.py
+```
+
+### 4. 使用流程
+
+1. **登录**
+   - 启动程序后会显示登录窗口
+   - 输入用户名和密码
+   - 勾选"记住密码"可保存凭据
+   - 点击"登录"按钮
+
+2. **主界面操作**
+   - 登录成功后进入主界面
+   - 点击"启动服务"开始WebSocket连接
+   - 在右侧日志窗口查看运行状态
+   - 根据需要启用定时重启和对话监听
+
+3. **配置修改**
+   - 切换到"配置编辑"标签页
+   - 直接修改配置内容
+   - 点击"保存配置"
+   - 重启服务使配置生效
+
+## 架构设计
+
+### 分层架构
+
+1. **GUI层** (`gui/`)
+   - 只负责界面展示和用户交互
+   - 通过回调与服务层通信
+   - 不包含业务逻辑
+
+2. **服务层** (`services/`)
+   - 整合核心功能，提供统一接口
+   - 管理服务生命周期
+   - 降低GUI和核心层的耦合
+
+3. **核心层** (`core/`)
+   - 独立的业务逻辑模块
+   - 可以单独使用，不依赖GUI
+   - 每个模块职责单一
+
+### 设计模式
+
+- **依赖注入**: 服务层通过构造函数注入依赖
+- **观察者模式**: 使用回调函数通知状态变化
+- **单一职责**: 每个模块只负责一个功能
+- **接口隔离**: 使用Protocol定义接口
 
 ## 注意事项
 
-### 数据和文件
-- 首次运行会自动创建 `conversations.db` 数据库文件
-- 验证码图片会临时保存为 `验证码.png`
-- 日志会同时输出到控制台和 `auto_reply.log` 文件
-- `.env` 文件包含敏感信息，请勿提交到版本控制（已在 `.gitignore` 中）
+1. **Token过期**: WebSocket和Token会在3小时左右过期，建议启用定时重启功能
 
-### GUI模式
-- GUI模式需要tkinter支持，macOS可能需要: `brew install python-tk`
-- 如果GUI不可用，启动器会自动提示切换到CLI模式
+2. **验证码识别**: 使用ddddocr进行验证码识别，准确率约90%，失败会自动重试
 
-### 运行控制
-- GUI模式: 点击"停止"按钮或关闭窗口退出
-- CLI模式: 按 `Ctrl+C` 安全退出程序
+3. **消息分段**: 如果Dify返回的消息包含`&&&`分隔符，会自动分段发送
 
-### 消息分段
-- 在AI回复中使用 `&&&` 作为分隔符，系统会自动分段发送
-- 示例: `第一段内容&&&第二段内容&&&第三段内容` → 依次发送3条消息
+4. **数据库**: 使用SQLite存储对话历史，文件位置在`conversations.db`
 
-### 对话监听
-- 默认每5秒检查一次超时对话
-- 超时阈值: 3小时未互动
-- 单个用户最多主动激活10次，避免过度打扰
-- 可在 `conversation_monitor.py` 中调整这些参数
+5. **日志文件**: 默认保存在`auto_reply.log`，可在配置文件中修改
 
-## 常见问题
+## 故障排除
 
-### 1. GUI启动失败
-```bash
-# 检查tkinter是否安装
-python -c "import tkinter"
+### 登录失败
+- 检查网络连接
+- 确认用户名密码正确
+- 查看日志中的详细错误信息
 
-# macOS安装
-brew install python-tk
+### WebSocket连接失败
+- 确保已成功登录
+- 检查token是否有效
+- 查看防火墙设置
 
-# Ubuntu/Debian安装
-sudo apt-get install python3-tk
+### 消息处理失败
+- 检查Dify配置是否正确
+- 确认API密钥有效
+- 查看日志中的错误详情
+
+## 开发说明
+
+### 添加新功能
+
+1. 在 `core/` 中实现核心逻辑
+2. 在 `services/` 中整合到服务层
+3. 在 `gui/` 中添加界面元素
+
+### 修改配置
+
+1. 编辑 `config.toml`
+2. 在 `config.py` 中加载配置
+3. 在需要的地方使用 `config.xxx`
+
+### 日志记录
+
+```python
+import logging
+logger = logging.getLogger(__name__)
+logger.info("信息")
+logger.warning("警告")
+logger.error("错误")
 ```
 
-### 2. Playwright浏览器问题
-```bash
-# 重新安装Chromium
-playwright install chromium
-```
+## 许可证
 
-### 3. 配置优先级
-.env 文件/环境变量 > GUI配置 > config.py 中的 os.getenv() 默认值
+本项目仅供学习和研究使用。
 
-**推荐做法**：
-- 开发/生产环境：使用 `.env` 文件
-- 临时测试：使用环境变量 `export`
-- 快速调整：使用 GUI 界面配置
-- **不推荐**：直接修改 `config.py` 源码
+## 联系方式
 
-## 技术栈
-
-- **语言**: Python 3.8+
-- **UI框架**: Tkinter (跨平台)
-- **自动化**: Playwright (绕过Cloudflare)
-- **AI对话**: Dify API
-- **数据库**: SQLite
-- **异步**: asyncio + aiohttp
-- **日志**: logging (自定义彩色formatter)
-- **配置管理**: python-dotenv (.env 文件)
+如有问题，请查看日志文件或联系开发者。

@@ -1,161 +1,176 @@
 #!/usr/bin/env python3
 """
-RocketGo 自动回复机器人 - 主入口文件
+RocketGo 自动控制系统 - 主入口文件
 
-这是一个智能客服自动回复机器人，具备以下功能：
-- 自动登录RocketGo平台
-- 监听WebSocket消息
-- 调用Dify AI API生成智能回复
-- 自动发送回复消息
-- 使用SQLite持久化对话状态
-- 定时重启机制（1-3小时随机）以保持连接活性
-
-使用方法：
-    python main.py
-
-配置方法：
-    1. 直接修改config.py中的配置项
-    2. 或者通过环境变量设置（推荐）
-
-示例环境变量：
-    export ROCKETGO_USER="your_username"
-    export ROCKETGO_PASS="your_password"
-    export DIFY_API_KEY="your_dify_api_key"
+功能：
+1. 用户登录
+2. 启动主界面
+3. 集成 asyncio 和 tkinter
 """
 
+import sys
 import asyncio
 import logging
-import sys
-import random
+import tkinter as tk
+from pathlib import Path
 
-from config import Config
-from client import RocketGoClient
-from logger_config import setup_logging, print_startup_banner, print_status_message
+# 添加项目根目录到路径
+sys.path.insert(0, str(Path(__file__).parent))
 
-async def run_with_timeout(client: RocketGoClient):
-    """运行客户端，并在指定时间后自动停止（1-3小时随机）"""
+from config import config
+from services.rocket_service import RocketService
+from gui.login_window import LoginWindow
+from gui.main_window import MainWindow
+
+
+def setup_logging():
+    """配置日志系统"""
+    from logging.handlers import TimedRotatingFileHandler
+
+    log_level = getattr(logging, config.log.level.upper(), logging.INFO)
+
+    # 创建按天轮转的日志处理器
+    # when='midnight': 每天午夜轮转
+    # interval=1: 每1天轮转一次
+    # backupCount=7: 保留7天的日志
+    # encoding='utf-8': 使用UTF-8编码
+    file_handler = TimedRotatingFileHandler(
+        filename=config.log.file,
+        when='midnight',
+        interval=1,
+        backupCount=7,
+        encoding='utf-8'
+    )
+    file_handler.suffix = "%Y-%m-%d"  # 日志文件后缀格式：auto_reply.log.2025-01-07
+
+    # 配置根日志记录器
+    logging.basicConfig(
+        level=log_level,
+        format='%(asctime)s - %(name)s - %(levelname)s - %(message)s',
+        handlers=[
+            file_handler,
+            logging.StreamHandler()
+        ]
+    )
+
     logger = logging.getLogger(__name__)
+    logger.info("=" * 60)
+    logger.info("RocketGo 自动控制系统启动")
+    logger.info("=" * 60)
 
-    # 生成1-3小时之间的随机秒数 (1*3600 ~ 3*3600)
-    timeout_seconds = random.randint(1 * 3600, 3 * 3600)
-    timeout_hours = timeout_seconds / 3600
 
-    logger.info(f"⏰ 本次运行时长设置为: {timeout_hours:.2f} 小时 ({timeout_seconds} 秒)")
-    print_status_message(f"⏰ 本次运行时长: {timeout_hours:.2f} 小时", "info")
+class AsyncTkApp:
+    """集成 asyncio 和 tkinter 的应用程序"""
 
-    try:
-        # 创建运行任务
-        run_task = asyncio.create_task(client.start_auto_reply())
+    def __init__(self):
+        self.loop = asyncio.new_event_loop()
+        asyncio.set_event_loop(self.loop)
+        self.rocket_service: RocketService = None
+        self.main_window: MainWindow = None
 
-        # 创建超时任务
-        timeout_task = asyncio.create_task(asyncio.sleep(timeout_seconds))
+    async def run_login(self):
+        """运行登录窗口"""
+        login_success = False
+        username = None
+        password = None
 
-        # 等待任一任务完成
-        done, pending = await asyncio.wait(
-            {run_task, timeout_task},
-            return_when=asyncio.FIRST_COMPLETED
-        )
+        async def on_login(user, pwd):
+            nonlocal login_success, username, password
+            # 创建服务并尝试登录
+            self.rocket_service = RocketService()
+            success = await self.rocket_service.login(user, pwd)
+            if success:
+                login_success = True
+                username = user
+                password = pwd
+            return success
 
-        # 检查哪个任务完成了
-        if timeout_task in done:
-            # 超时了，需要重启
-            logger.info("⏰ 运行时间到达，准备重启...")
-            print_status_message("⏰ 运行时间到达，准备重启...", "warning")
+        # 创建登录窗口
+        login_window = LoginWindow(on_login_success=on_login)
 
-            # 取消运行任务
-            run_task.cancel()
-            try:
-                await run_task
-            except asyncio.CancelledError:
-                pass
+        # 在 asyncio 事件循环中运行 tkinter
+        await self._run_tk_window(login_window.root)
 
-            # 清理资源
-            await client.cleanup()
+        return login_success
 
-            return "restart"  # 返回重启标志
-        else:
-            # 客户端正常退出或出错
-            timeout_task.cancel()
-            try:
-                await timeout_task
-            except asyncio.CancelledError:
-                pass
+    async def run_main(self):
+        """运行主窗口"""
+        # 创建主窗口
+        self.main_window = MainWindow(self.rocket_service)
 
-            # 检查运行任务的结果
-            if run_task.exception():
-                raise run_task.exception()
+        # 在 asyncio 事件循环中运行 tkinter
+        await self._run_tk_window(self.main_window.root)
 
-            return "exit"  # 正常退出
+    async def _run_tk_window(self, root):
+        """在 asyncio 事件循环中运行 tkinter 窗口
 
-    except asyncio.CancelledError:
-        logger.info("运行被取消")
-        return "exit"
-    except Exception as e:
-        logger.error(f"运行出错: {e}")
-        raise
-
-async def main():
-    """主函数 - 带自动重启机制"""
-    # 设置彩色日志
-    setup_logging(Config.LOG_LEVEL, Config.LOG_FILE, use_colors=True)
-    logger = logging.getLogger(__name__)
-
-    # 打印启动横幅
-    print_startup_banner()
-
-    restart_count = 0  # 重启计数器
-
-    while True:
-        # 创建客户端
-        client = RocketGoClient()
-
+        Args:
+            root: tkinter 根窗口
+        """
         try:
-            if restart_count == 0:
-                print_status_message("启动自动回复机器人...", "loading")
-                logger.info("🚀 启动自动回复机器人...")
-            else:
-                print_status_message(f"重启自动回复机器人... (第 {restart_count} 次重启)", "loading")
-                logger.info(f"🔄 重启自动回复机器人... (第 {restart_count} 次重启)")
+            while True:
+                # 更新 tkinter 事件
+                root.update()
 
-            # 运行客户端（带超时）
-            result = await run_with_timeout(client)
+                # 处理 asyncio 任务
+                await asyncio.sleep(0.01)
 
-            if result == "restart":
-                # 需要重启
-                restart_count += 1
-                logger.info(f"💫 准备进行第 {restart_count} 次重启，等待5秒...")
-                print_status_message(f"等待5秒后重启... (已重启 {restart_count} 次)", "info")
-                await asyncio.sleep(5)  # 等待5秒后重启
-                continue
-            else:
-                # 正常退出
-                logger.info("程序正常退出")
-                print_status_message("程序正常退出", "info")
-                return 0
+                # 检查窗口是否被关闭
+                if not root.winfo_exists():
+                    break
+
+        except tk.TclError:
+            # 窗口已关闭
+            pass
+        except Exception as e:
+            logging.error(f"窗口运行出错: {e}", exc_info=True)
+
+    async def run(self):
+        """运行应用程序"""
+        try:
+            # 1. 显示登录窗口
+            login_success = await self.run_login()
+
+            if not login_success:
+                logging.info("用户取消登录或登录失败，程序退出")
+                return
+
+            logging.info("登录成功，启动主窗口")
+
+            # 2. 显示主窗口
+            await self.run_main()
 
         except KeyboardInterrupt:
-            print_status_message("收到退出信号，正在停止程序...", "warning")
-            logger.info("收到退出信号，正在停止程序...")
-            await client.cleanup()
-            return 0
+            logging.info("用户中断程序")
         except Exception as e:
-            print_status_message(f"程序运行出错: {e}", "error")
-            logger.error(f"程序运行出错: {e}", exc_info=True)
+            logging.error(f"程序运行出错: {e}", exc_info=True)
+        finally:
+            # 清理资源
+            if self.rocket_service:
+                try:
+                    await self.rocket_service.cleanup()
+                except Exception as e:
+                    logging.error(f"清理资源失败: {e}")
 
-            # 出错后也尝试重启（但增加重启计数）
-            restart_count += 1
-            logger.info(f"⚠️  出错后准备重启，等待10秒... (已重启 {restart_count} 次)")
-            print_status_message(f"出错后等待10秒重启... (已重启 {restart_count} 次)", "warning")
-            await asyncio.sleep(10)  # 出错后等待更长时间
-            continue
+            logging.info("程序退出")
+
+    def start(self):
+        """启动应用程序"""
+        try:
+            self.loop.run_until_complete(self.run())
+        finally:
+            self.loop.close()
+
+
+def main():
+    """主函数"""
+    # 配置日志
+    setup_logging()
+
+    # 创建并启动应用
+    app = AsyncTkApp()
+    app.start()
+
 
 if __name__ == "__main__":
-    try:
-        exit_code = asyncio.run(main())
-        sys.exit(exit_code)
-    except KeyboardInterrupt:
-        print_status_message("程序已手动终止", "warning")
-        sys.exit(0)
-    except Exception as e:
-        print_status_message(f"程序异常退出: {e}", "error")
-        sys.exit(1)
+    main()

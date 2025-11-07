@@ -1,0 +1,42 @@
+# --------------------------- 基础配置 ---------------------------
+[log]
+level = "DEBUG"
+file = "auto_reply.log"
+
+# --------------------------- RocketGo 配置 ---------------------------
+[rocketgo]
+login_url = "https://pn3cs.rocketgo.vip/prod-api2/login"
+captcha_image_url = "https://pn3cs.rocketgo.vip/prod-api2/captchaImage"
+user_info_url = "https://pn3cs.rocketgo.vip/prod-api2/getInfo"
+account_info_url = "https://pn3cs.rocketgo.vip/prod-api2/biz/chat/getAccountList"
+session_url = "https://pn3cs.rocketgo.vip/prod-api2/biz/chat/getCsList"
+not_read_message_url = "https://pn3cs.rocketgo.vip/prod-api2/biz/chat/getNotRead"
+friends_url = "https://pn3cs.rocketgo.vip/prod-api2/biz/chat/getAccountChat"
+friends_chat_url = "https://pn3cs.rocketgo.vip/prod-api2/biz/chat/chatLogList"
+ws_url = "wss://pn3cs.rocketgo.vip/websocket"
+set_read_url = "https://pn3cs.rocketgo.vip/prod-api2/biz/chat/setRead/"
+reconnect_delay = 3.0
+
+# --------------------------- Dify AI 配置 ---------------------------
+[dify]
+url = "http://154.23.162.92/v1"
+api_key = "app-uuSjCfzFpta087yiJ1r9JMAd"
+
+[dify.input]
+register_url = "https://lambdamex.vip/xml/index.html#/register/9913203"
+whatsapp_url = "https://www.baidu.com"
+hr_name = "Mia"
+language = "中文"
+is_return_visit = 0
+
+# --------------------------- 消息发送配置 ---------------------------
+[send]
+msg_url = "https://pn3cs.rocketgo.vip/prod-api2/biz/chat/sendMsg"
+
+# --------------------------- 数据库配置 ---------------------------
+[db]
+path = "conversations.db"
+
+# --------------------------- 其他配置 ---------------------------
+[other]
+captcha_image_path = "验证码.png"

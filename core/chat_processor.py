@@ -7,18 +7,27 @@ import json
 import logging
 from typing import Dict, Any, Optional
 
-from dify_client import DifyChatBot
-from message_splitter import MessageSplitter
+from core.dify import DifyChatBot
+from core.message_splitter import MessageSplitter
+from core.message_service import MessageServiceProtocol
 
 logger = logging.getLogger(__name__)
 
 class MessageProcessor:
     """消息处理器 - 处理WebSocket接收的消息并调用Dify"""
 
-    def __init__(self, dify_url: str, dify_api_key: str, input_params:dict, send_message_callback=None, client=None, db_path: str = "conversations.db"):
+    def __init__(self, dify_url: str, dify_api_key: str, input_params:dict, message_service: Optional[MessageServiceProtocol] = None, db_path: str = "conversations.db"):
+        """初始化消息处理器
+
+        Args:
+            dify_url: Dify API URL
+            dify_api_key: Dify API密钥
+            input_params: 输入参数
+            message_service: 消息服务实现（实现MessageServiceProtocol接口）
+            db_path: 数据库路径
+        """
         self.chatbot = DifyChatBot(dify_url, dify_api_key, input_params, db_path)
-        self.send_message_callback = send_message_callback
-        self.client = client  # RocketGoClient实例，用于调用set_read接口
+        self.message_service = message_service  # 使用接口而非具体实现
         self.message_splitter = MessageSplitter(delimiter="&&&")  # 初始化消息分段器
 
     def extract_message_info(self, raw_message: str) -> Optional[Dict[str, Any]]:
@@ -159,9 +168,9 @@ class MessageProcessor:
             # return None
         try:
             # 立即调用set_read接口，标记消息已读
-            if self.client and chat_id:
+            if self.message_service and chat_id:
                 try:
-                    await self.client.set_read(chat_id)
+                    await self.message_service.set_read(chat_id)
                     logger.info(f"已标记消息 {chat_id} 为已读")
                 except Exception as e:
                     logger.error(f"标记消息已读失败: {e}")
@@ -185,18 +194,17 @@ class MessageProcessor:
                     return reply_content
 
                 # 如果有发送回调，则发送回复消息
-                if self.send_message_callback:
-                    message_segments = self.message_splitter.split_message(reply_content)
-                    
-                    if message_segments:
-                        # 分句发送
-                        for i, segment in enumerate(message_segments, 1):
-                            logger.info(f"正在发送第 {i}/{len(message_segments)} 段")
-                            await self.send_message_callback(message_info, segment)
-                        
-                        logger.info(f"所有分句已发送")
-                    else:
-                        logger.warning("分句结果为空")
+                message_segments = self.message_splitter.split_message(reply_content)
+
+                if message_segments:
+                    # 分句发送
+                    for i, segment in enumerate(message_segments, 1):
+                        logger.info(f"正在发送第 {i}/{len(message_segments)} 段")
+                        await self.message_service.send_message(message_info, segment)
+
+                    logger.info(f"所有分句已发送")
+                else:
+                    logger.warning("分句结果为空")
 
                 return reply_content
             else:

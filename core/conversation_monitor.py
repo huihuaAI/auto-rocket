@@ -7,8 +7,8 @@ import asyncio
 import logging
 from typing import Optional, Callable, Dict, Any
 
-from db_manager import ConversationManager
-from dify_client import DifyChatBot
+from core.db_manage import ConversationManager
+from core.dify import DifyChatBot
 
 logger = logging.getLogger(__name__)
 

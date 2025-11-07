@@ -5,6 +5,8 @@
 
 import logging
 import sys
+from logging.handlers import TimedRotatingFileHandler
+
 
 class ColoredFormatter(logging.Formatter):
     """彩色日志格式化器"""
@@ -111,8 +113,20 @@ def setup_logging(log_level="INFO", log_file="auto_reply.log", use_colors=True):
     console_handler.setFormatter(console_formatter)
     root_logger.addHandler(console_handler)
 
-    # 文件处理器（纯文本）
-    file_handler = logging.FileHandler(log_file, encoding='utf-8')
+    # 文件处理器（纯文本）- 使用 TimedRotatingFileHandler
+    # when='midnight': 每天午夜创建新日志文件
+    # interval=1: 每1天
+    # backupCount=7: 保留7天的日志，自动删除超过7天的日志
+    # encoding='utf-8': UTF-8编码
+    file_handler = TimedRotatingFileHandler(
+        filename=log_file,
+        when='midnight',
+        interval=1,
+        backupCount=7,
+        encoding='utf-8'
+    )
+    file_handler.suffix = "%Y-%m-%d"  # 日志文件名后缀，格式为YYYY-MM-DD
+
     file_formatter = ColoredFormatter(use_colors=False)  # 文件不使用颜色
     file_handler.setFormatter(file_formatter)
     root_logger.addHandler(file_handler)

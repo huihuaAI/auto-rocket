@@ -212,7 +212,7 @@ class RocketService:
     async def start_conversation_monitor(self,
                                          check_interval: int = 5,
                                          stale_hours: int = 3,
-                                         max_active_count: int = 10):
+                                         max_active_count: int = 3):
         """启动对话监听服务
 
         Args:

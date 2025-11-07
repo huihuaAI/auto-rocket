@@ -18,7 +18,7 @@ class ConversationMonitor:
 
     功能：
     - 每5秒查询一次数据库
-    - 找出更新时间超过3小时且激活次数<=10的对话
+    - 找出更新时间超过3小时且激活次数<=3的对话
     - 调用Dify生成消息
     - 通过回调发送消息
     """
@@ -33,7 +33,7 @@ class ConversationMonitor:
         send_message_callback: Optional[Callable] = None,
         check_interval: int = 5,
         stale_hours: int = 3,
-        max_active_count: int = 10
+        max_active_count: int = 3
     ):
         """初始化监听服务
 

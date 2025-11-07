@@ -185,7 +185,7 @@ class MainWindow:
         stale_hours_entry.grid(row=2, column=1, sticky=tk.W, pady=5, padx=(10, 0))
 
         ttk.Label(monitor_frame, text="最大激活次数:").grid(row=3, column=0, sticky=tk.W, pady=5)
-        self.max_active_var = tk.StringVar(value="10")
+        self.max_active_var = tk.StringVar(value="3")
         max_active_entry = ttk.Entry(monitor_frame, textvariable=self.max_active_var, width=10)
         max_active_entry.grid(row=3, column=1, sticky=tk.W, pady=5, padx=(10, 0))
 

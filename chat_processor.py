@@ -6,7 +6,6 @@
 import json
 import logging
 from typing import Dict, Any, Optional
-
 from dify_client import DifyChatBot
 from message_splitter import MessageSplitter
 
@@ -15,8 +14,8 @@ logger = logging.getLogger(__name__)
 class MessageProcessor:
     """消息处理器 - 处理WebSocket接收的消息并调用Dify"""
 
-    def __init__(self, dify_url: str, dify_api_key: str, input_params:dict, send_message_callback=None, client=None, db_path: str = "conversations.db"):
-        self.chatbot = DifyChatBot(dify_url, dify_api_key, input_params, db_path)
+    def __init__(self, dify_url: str, dify_api_key: str, input_params:dict, send_message_callback=None, client=None):
+        self.chatbot = DifyChatBot(dify_url, dify_api_key, input_params)
         self.send_message_callback = send_message_callback
         self.client = client  # RocketGoClient实例，用于调用set_read接口
         self.message_splitter = MessageSplitter(delimiter="&&&")  # 初始化消息分段器

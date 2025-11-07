@@ -4,8 +4,6 @@
 """
 
 import logging
-import os
-from pathlib import Path
 from datetime import datetime
 from typing import Optional, List, Dict
 from sqlalchemy import create_engine, Column, String, DateTime, Integer
@@ -57,46 +55,9 @@ class ConversationManager:
 
     def __init__(self, db_path: str = "conversations.db"):
         self.db_path = db_path
-        logger.info(f"初始化数据库管理器，路径: {db_path}")
-
-        # 确保数据库文件的父目录存在
-        db_dir = os.path.dirname(db_path)
-        if db_dir:
-            if not os.path.exists(db_dir):
-                try:
-                    os.makedirs(db_dir, exist_ok=True)
-                    logger.info(f"创建数据库目录: {db_dir}")
-                except Exception as e:
-                    logger.error(f"创建数据库目录失败: {e}")
-                    raise
-            else:
-                logger.info(f"数据库目录已存在: {db_dir}")
-                # 检查目录权限
-                if not os.access(db_dir, os.W_OK):
-                    logger.error(f"数据库目录不可写: {db_dir}")
-                    raise PermissionError(f"数据库目录不可写: {db_dir}")
-
-        # 处理路径中的空格和特殊字符
-        db_path_obj = Path(db_path).resolve()
-        logger.info(f"解析后的数据库路径: {db_path_obj}")
-
-        # 使用简单的文件路径格式（四个斜杠表示绝对路径）
-        # 这种方式在 Windows 和 Unix 系统上都能正确处理
-        database_url = f'sqlite:///{db_path_obj}'
-        logger.info(f"数据库 URL: {database_url}")
-
-        try:
-            # 添加 check_same_thread=False 以允许多线程访问
-            self.engine = create_engine(
-                database_url,
-                echo=False,
-                connect_args={'check_same_thread': False}
-            )
-            self.SessionLocal = sessionmaker(bind=self.engine, expire_on_commit=False)
-            self._init_database()
-        except Exception as e:
-            logger.error(f"创建数据库引擎失败: {e}", exc_info=True)
-            raise
+        self.engine = create_engine(f'sqlite:///{db_path}', echo=False)
+        self.SessionLocal = sessionmaker(bind=self.engine, expire_on_commit=False)
+        self._init_database()
 
     def _init_database(self):
         """初始化数据库表"""

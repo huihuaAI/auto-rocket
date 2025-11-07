@@ -81,8 +81,7 @@ class IntegratedMessageHandler:
                  input_params:dict,
                  send_url: str,
                  auth_token: str,
-                 client=None,
-                 db_path: str = "conversations.db"):
+                 client=None):
         # 导入消息处理器
         from chat_processor import MessageProcessor
 
@@ -95,8 +94,7 @@ class IntegratedMessageHandler:
             dify_api_key=dify_api_key,
             input_params=input_params,
             send_message_callback=self.send_message_callback,
-            client=client,  # 传入client实例用于调用set_read
-            db_path=db_path  # 传入数据库路径
+            client=client  # 传入client实例用于调用set_read
         )
 
     async def send_message_callback(self, message_info: Dict[str, Any], reply_content: str):

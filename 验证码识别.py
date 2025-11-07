@@ -1,3 +1,5 @@
+import ddddocr
+import requests
 import base64
 from PIL import Image
 from io import BytesIO
@@ -25,3 +27,24 @@ def base64_to_image(base64_str, output_path):
     except Exception as e:
         print(f"转换失败: {str(e)}")
         return False
+
+if __name__ == '__main__':
+
+    login_url = "https://pn3cs.rocketgo.vip/prod-api1/captchaImage"
+
+
+    response = requests.get(login_url)
+    code = response.json()["code"]
+    if code != 200:
+        print("获取验证码失败")
+        print(response.json())
+        exit()
+    uuid = response.json()["uuid"]
+    img = response.json()["img"]
+    # 保存验证码base64图片
+    base64_to_image(img, "验证码.png")
+    ocr = ddddocr.DdddOcr()
+    # 读取验证码图片
+    image = open("验证码.png", "rb").read()
+    result = ocr.classification(image)
+    print(result)

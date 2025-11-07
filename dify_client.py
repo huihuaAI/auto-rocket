@@ -149,3 +149,61 @@ class DifyChatBot:
 
     def update_time(self):
         self.conversation_manager.update_timestamp(self.chat_user_id)
+
+def main():
+    import asyncio
+
+    url = "http://154.23.162.92/v1"
+    api_key = "app-O8r0DhulXGQfJaP9wQDR1sTy"
+    input_params = {
+        "register_url": "https://www.baidu.com",
+        "whatsapp_url": "https://www.baidu.com",
+        "hr_name": "燕双鹰",
+        "language": "中文",
+    }
+    chatbot = DifyChatBot(url, api_key, input_params)
+
+    async def chat_loop():
+        print("Dify聊天机器人已启动！")
+        print("输入 'quit' 退出, 'reset' 重置对话, 'history' 查看历史")
+        print("-" * 50)
+
+        while True:
+            try:
+                user_input = input("\n你: ").strip()
+                if not user_input:
+                    continue
+
+                if user_input.lower() == 'quit':
+                    break
+                elif user_input.lower() == 'reset':
+                    chatbot.reset_conversation()
+                    print("对话已重置!")
+                    continue
+                elif user_input.lower() == 'history':
+                    history = await chatbot.get_conversation_history()
+                    print("\n对话历史:")
+                    for msg in history.get('data', []):
+                        print(f"用户: {msg.get('query', '')}")
+                        print(f"助手: {msg.get('answer', '')}")
+                        print("-" * 30)
+                    continue
+
+                print("\n助手: ", end="", flush=True)
+
+                # ✅ 改为非流式模式
+                result = await chatbot.chat_completion(user_input, stream=False)
+                print(result.get("answer", "（无返回）"))
+
+            except KeyboardInterrupt:
+                print("\n程序退出")
+                break
+            except Exception as e:
+                print(f"\n错误: {e}")
+                continue
+
+    asyncio.run(chat_loop())
+
+
+if __name__ == "__main__":
+    main()

@@ -113,11 +113,13 @@ class MainWindow:
         status_frame = ttk.LabelFrame(parent, text="服务状态", padding="10")
         status_frame.pack(fill=tk.X, padx=5, pady=5)
 
-        self.status_var = tk.StringVar(value="未启动")
+        self.status_var = tk.StringVar(value="⏸ 未启动")
         ttk.Label(status_frame, text="状态:").grid(row=0, column=0, sticky=tk.W, pady=2)
-        status_label = ttk.Label(status_frame, textvariable=self.status_var,
-                                 font=('Arial', 10, 'bold'))
-        status_label.grid(row=0, column=1, sticky=tk.W, pady=2, padx=(10, 0))
+        self.status_label = tk.Label(status_frame, textvariable=self.status_var,
+                                     font=('Arial', 10, 'bold'),
+                                     foreground='#808080',  # 默认灰色
+                                     background='SystemButtonFace')  # 使用系统背景色
+        self.status_label.grid(row=0, column=1, sticky=tk.W, pady=2, padx=(10, 0))
 
         # 服务控制按钮
         button_frame = ttk.LabelFrame(parent, text="服务控制", padding="10")
@@ -446,7 +448,35 @@ class MainWindow:
     def _update_status(self):
         """更新状态显示"""
         status = self.rocket_service.status
-        self.status_var.set(status.value)
+        
+        # 定义状态颜色映射
+        from services.rocket_service import ServiceStatus
+        status_colors = {
+            ServiceStatus.STOPPED: '#808080',      # 灰色
+            ServiceStatus.STARTING: '#FFA500',     # 橙色
+            ServiceStatus.RUNNING: '#008000',      # 绿色
+            ServiceStatus.STOPPING: '#FFA500',     # 橙色
+            ServiceStatus.ERROR: '#FF0000'         # 红色
+        }
+        
+        # 状态图标
+        status_icons = {
+            ServiceStatus.STOPPED: '⏸',
+            ServiceStatus.STARTING: '⏳',
+            ServiceStatus.RUNNING: '✅',
+            ServiceStatus.STOPPING: '⏳',
+            ServiceStatus.ERROR: '❌'
+        }
+        
+        # 设置状态文本和颜色
+        icon = status_icons.get(status, '')
+        status_text = f"{icon} {status.value}"
+        self.status_var.set(status_text)
+        
+        # 更新状态标签的颜色
+        if hasattr(self, 'status_label'):
+            color = status_colors.get(status, '#000000')
+            self.status_label.config(foreground=color)
 
         # 更新下次重启时间
         if self.scheduler_service and self.scheduler_service.is_running():

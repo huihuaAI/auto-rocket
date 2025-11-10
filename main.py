@@ -53,6 +53,11 @@ def setup_logging():
         ]
     )
 
+    # 禁用websockets库的DEBUG日志，避免重复显示
+    logging.getLogger('websockets').setLevel(logging.WARNING)
+    logging.getLogger('websockets.client').setLevel(logging.WARNING)
+    logging.getLogger('websockets.server').setLevel(logging.WARNING)
+
     logger = logging.getLogger(__name__)
     logger.info("=" * 60)
     logger.info("RocketGo 自动控制系统启动")

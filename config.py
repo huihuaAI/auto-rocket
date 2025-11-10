@@ -32,6 +32,16 @@ def get_credentials(username: str):
     return username, password
 
 
+def save_last_username(username: str):
+    """保存最后使用的用户名"""
+    keyring.set_password(SERVICE_NAME, "__last_username__", username)
+
+
+def get_last_username():
+    """获取最后使用的用户名"""
+    return keyring.get_password(SERVICE_NAME, "__last_username__")
+
+
 config = load_config()
 
 

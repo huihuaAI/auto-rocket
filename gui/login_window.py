@@ -100,10 +100,25 @@ class LoginWindow:
     def _load_credentials(self):
         """加载保存的凭据"""
         try:
-            # 尝试从keyring加载最后使用的用户名
-            # 这里我们假设配置文件中可能保存了上次的用户名
-            # 实际使用中可以从配置文件或其他地方读取
-            pass
+            from config import get_last_username, get_credentials
+            
+            # 加载最后使用的用户名
+            username = get_last_username()
+            if username:
+                logger.info(f"找到保存的用户名: {username}")
+                self.username_var.set(username)
+                
+                # 尝试加载密码
+                _, password = get_credentials(username)
+                if password:
+                    logger.info("找到保存的密码")
+                    self.password_var.set(password)
+                    self.remember_var.set(True)  # 勾选"记住密码"
+                else:
+                    logger.debug("未找到保存的密码")
+            else:
+                logger.debug("未找到保存的用户名")
+                
         except Exception as e:
             logger.debug(f"加载凭据失败: {e}")
 
@@ -135,14 +150,17 @@ class LoginWindow:
             success = await self.on_login_success(username, password)
 
             if success:
-                # 保存凭据（如果勾选了记住密码）
+                # 保存凭据(如果勾选了记住密码)
                 if self.remember_var.get():
                     try:
+                        from config import set_credentials, save_last_username
                         set_credentials(username, password)
+                        save_last_username(username)
+                        logger.info(f"已保存用户 {username} 的登录凭据")
                     except Exception as e:
                         logger.error(f"保存凭据失败: {e}")
 
-                self.status_var.set("登录成功！")
+                self.status_var.set("登录成功!")
 
                 # 延迟关闭窗口
                 self.root.after(500, self._close_and_continue)

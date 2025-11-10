@@ -162,8 +162,30 @@ class RocketService:
                 except Exception as e:
                     logger.error(f"消息处理出错: {e}", exc_info=True)
 
+            # 定义认证错误处理回调
+            async def handle_auth_error():
+                """处理认证错误，尝试重新登录"""
+                if not self._username or not self._password:
+                    logger.error("无法重新登录：缺少保存的用户名或密码")
+                    return None
+                
+                logger.info(f"尝试使用保存的凭据重新登录: {self._username}")
+                success = await self.login(self._username, self._password)
+                
+                if success:
+                    new_token = self.auth_manager.get_token_id()
+                    logger.info("重新登录成功，返回新token")
+                    return new_token
+                else:
+                    logger.error("重新登录失败")
+                    return None
+
             # 创建WebSocket客户端并注入消息处理回调
-            self.ws_client = WSClient(token_id, message_handler=handle_message)
+            self.ws_client = WSClient(
+                token_id, 
+                message_handler=handle_message,
+                on_auth_error=handle_auth_error
+            )
 
             # 启动WebSocket连接（在后台运行）
             self._ws_task = asyncio.create_task(self.ws_client.connect())

@@ -15,7 +15,7 @@ from core.client import Client
 from core.ws import WSClient
 from core.chat_processor import MessageProcessor
 from core.conversation_monitor import ConversationMonitor
-from config import config
+from config import config, get_data_file_path
 
 logger = logging.getLogger(__name__)
 
@@ -143,7 +143,7 @@ class RocketService:
                 dify_api_key=config.dify.api_key,
                 input_params=dict(config.dify.input),
                 message_service=self.client,  # Client实现了MessageServiceProtocol
-                db_path=config.db.path
+                db_path=str(get_data_file_path(config.db.path))
             )
 
             # 定义消息处理回调
@@ -254,7 +254,7 @@ class RocketService:
 
             # 创建对话监听服务
             self.conversation_monitor = ConversationMonitor(
-                db_path=config.db.path,
+                db_path=str(get_data_file_path(config.db.path)),
                 dify_url=config.dify.url,
                 dify_api_key=config.dify.api_key,
                 dify_input_params=dict(config.dify.input),

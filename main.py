@@ -17,7 +17,7 @@ from pathlib import Path
 # 添加项目根目录到路径
 sys.path.insert(0, str(Path(__file__).parent))
 
-from config import config
+from config import config, get_data_file_path, USER_DATA_DIR, CONFIG_PATH
 from services.rocket_service import RocketService
 from gui.login_window import LoginWindow
 from gui.main_window import MainWindow
@@ -26,8 +26,12 @@ from gui.main_window import MainWindow
 def setup_logging():
     """配置日志系统"""
     from logging.handlers import TimedRotatingFileHandler
+    import os
 
     log_level = getattr(logging, config.log.level.upper(), logging.INFO)
+
+    # 获取日志文件路径（适配打包环境）
+    log_file = get_data_file_path(config.log.file)
 
     # 创建按天轮转的日志处理器
     # when='midnight': 每天午夜轮转
@@ -35,7 +39,7 @@ def setup_logging():
     # backupCount=7: 保留7天的日志
     # encoding='utf-8': 使用UTF-8编码
     file_handler = TimedRotatingFileHandler(
-        filename=config.log.file,
+        filename=str(log_file),
         when='midnight',
         interval=1,
         backupCount=7,
@@ -61,6 +65,11 @@ def setup_logging():
     logger = logging.getLogger(__name__)
     logger.info("=" * 60)
     logger.info("RocketGo 自动控制系统启动")
+    logger.info("=" * 60)
+    logger.info(f"用户数据目录: {USER_DATA_DIR}")
+    logger.info(f"配置文件路径: {CONFIG_PATH}")
+    logger.info(f"日志文件路径: {log_file}")
+    logger.info(f"是否打包环境: {getattr(sys, 'frozen', False)}")
     logger.info("=" * 60)
 
 

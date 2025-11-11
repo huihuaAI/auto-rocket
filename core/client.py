@@ -1,6 +1,8 @@
 import asyncio
 import logging
-from config import config
+import sys
+from pathlib import Path
+from config import config, get_data_file_path
 from typing import Any, Optional
 import base64
 from PIL import Image
@@ -214,11 +216,23 @@ class Client:
             )
         uuid = data["uuid"]
         img = data["img"]
+
+        # 获取验证码图片路径，使用 get_data_file_path 确保正确的目录
+        captcha_image_path = str(get_data_file_path(config.other.captcha_image_path))
+        logger.info(f"验证码图片保存路径: {captcha_image_path}")
+
         # 保存验证码base64图片
-        base64_to_image(img, config.other.captcha_image_path)
+        base64_to_image(img, captcha_image_path)
+        logger.info(f"验证码图片已保存: {captcha_image_path}")
+
+        # 验证文件是否存在
+        if not Path(captcha_image_path).exists():
+            logger.error(f"验证码图片保存失败，文件不存在: {captcha_image_path}")
+            raise FileNotFoundError(f"验证码图片保存失败: {captcha_image_path}")
+
         ocr = ddddocr.DdddOcr()
         # 读取验证码图片
-        image = open(config.other.captcha_image_path, "rb").read()
+        image = open(captcha_image_path, "rb").read()
         result = ocr.classification(image)
         logger.info("验证码识别结果: %s", result)
         return uuid, result

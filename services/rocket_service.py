@@ -248,7 +248,7 @@ class RocketService:
 
         try:
             # 获取csId
-            cs_id = self.auth_manager.get_token_id()
+            cs_id = self.auth_manager.get_user_id()
             if not cs_id:
                 raise RuntimeError("未获取到csId，无法启动对话监听服务")
 

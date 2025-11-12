@@ -12,7 +12,7 @@ from datetime import datetime
 
 from services.rocket_service import RocketService, ServiceStatus
 from services.scheduler_service import SchedulerService
-from config import reload_config
+from config import reload_config, get_config_path
 
 logger = logging.getLogger(__name__)
 
@@ -198,7 +198,8 @@ class MainWindow:
         path_frame = ttk.Frame(parent)
         path_frame.pack(fill=tk.X, padx=5, pady=5)
 
-        ttk.Label(path_frame, text="配置文件: config.toml").pack(side=tk.LEFT)
+        config_path = get_config_path()
+        ttk.Label(path_frame, text=f"配置文件: {config_path}").pack(side=tk.LEFT)
 
         # 配置编辑器
         editor_frame = ttk.Frame(parent)
@@ -249,8 +250,7 @@ class MainWindow:
     def _load_config_file(self):
         """加载配置文件"""
         try:
-            from pathlib import Path
-            config_path = Path(__file__).parent.parent / "config.toml"
+            config_path = get_config_path()
             with open(config_path, 'r', encoding='utf-8') as f:
                 content = f.read()
                 self.config_text.delete('1.0', tk.END)
@@ -262,17 +262,16 @@ class MainWindow:
     def _save_config_file(self):
         """保存配置文件"""
         try:
-            from pathlib import Path
-            config_path = Path(__file__).parent.parent / "config.toml"
+            config_path = get_config_path()
             content = self.config_text.get('1.0', tk.END)
             with open(config_path, 'w', encoding='utf-8') as f:
                 f.write(content)
 
             # 重新加载配置到内存
             if reload_config():
-                messagebox.showinfo("成功", "配置文件已保存并重新加载！\n注意：部分配置需要重启服务才能生效。")
+                messagebox.showinfo("成功", f"配置文件已保存并重新加载！\n路径：{config_path}\n注意：部分配置需要重启服务才能生效。")
             else:
-                messagebox.showwarning("警告", "配置文件已保存，但重新加载失败！\n请检查配置文件格式是否正确。")
+                messagebox.showwarning("警告", f"配置文件已保存到 {config_path}，但重新加载失败！\n请检查配置文件格式是否正确。")
         except Exception as e:
             logger.error(f"保存配置文件失败: {e}")
             messagebox.showerror("错误", f"保存配置文件失败: {str(e)}")

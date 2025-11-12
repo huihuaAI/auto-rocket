@@ -162,6 +162,24 @@ def get_last_username():
     return keyring.get_password(SERVICE_NAME, "__last_username__")
 
 
+def reload_config():
+    """重新加载配置文件，更新全局 config 对象"""
+    global config
+    try:
+        new_config = load_config()
+        # 清空并更新现有的 config 对象，而不是创建新对象
+        # 这样可以确保所有已经导入 config 的模块都能获取到新配置
+        config.clear()
+        config.update(new_config)
+        import logging
+        logging.info("配置已重新加载")
+        return True
+    except Exception as e:
+        import logging
+        logging.error(f"重新加载配置失败: {e}")
+        return False
+
+
 config = load_config()
 
 

@@ -12,6 +12,7 @@ from datetime import datetime
 
 from services.rocket_service import RocketService, ServiceStatus
 from services.scheduler_service import SchedulerService
+from config import reload_config
 
 logger = logging.getLogger(__name__)
 
@@ -266,7 +267,12 @@ class MainWindow:
             content = self.config_text.get('1.0', tk.END)
             with open(config_path, 'w', encoding='utf-8') as f:
                 f.write(content)
-            messagebox.showinfo("成功", "配置文件已保存！\n注意：部分配置需要重启服务才能生效。")
+
+            # 重新加载配置到内存
+            if reload_config():
+                messagebox.showinfo("成功", "配置文件已保存并重新加载！\n注意：部分配置需要重启服务才能生效。")
+            else:
+                messagebox.showwarning("警告", "配置文件已保存，但重新加载失败！\n请检查配置文件格式是否正确。")
         except Exception as e:
             logger.error(f"保存配置文件失败: {e}")
             messagebox.showerror("错误", f"保存配置文件失败: {str(e)}")
